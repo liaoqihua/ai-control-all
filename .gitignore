@@ -41,6 +41,3 @@ Thumbs.db
 # Keystore files
 *.jks
 *.keystore
-
-# Google Services (if using Firebase)
-# google-services.json
