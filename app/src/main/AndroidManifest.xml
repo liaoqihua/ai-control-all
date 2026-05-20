@@ -23,11 +23,5 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".ui.SettingsActivity"
-            android:label="Agent 设置"
-            android:exported="false"
-            android:theme="@style/Theme.AiControlAll" />
-
     </application>
 </manifest>
