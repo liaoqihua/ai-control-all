@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="56dp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingHorizontal="16dp"
+    android:background="?attr/selectableItemBackground">
+
+    <TextView
+        android:id="@+id/tvIcon"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:gravity="center"
+        android:background="@drawable/menu_btn_bg"
+        android:textSize="18sp" />
+
+    <TextView
+        android:id="@+id/tvLabel"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="12dp"
+        android:textSize="14sp"
+        android:textColor="@color/text_primary"
+        android:fontFamily="monospace" />
+
+    <TextView
+        android:id="@+id/tvBadge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minWidth="24dp"
+        android:gravity="center"
+        android:paddingHorizontal="6dp"
+        android:paddingVertical="2dp"
+        android:textSize="10sp"
+        android:textColor="@color/accent_green"
+        android:background="@drawable/menu_btn_bg"
+        android:fontFamily="monospace"
+        android:visibility="gone" />
+</LinearLayout>
