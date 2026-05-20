@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>AiControlAll — 默认页原型</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    background: #0A0E17;
+    color: #e0e6f0;
+    max-width: 420px;
+    margin: 0 auto;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Topbar */
+  .topbar {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    background: #0A0E17;
+    border-bottom: 1px solid #1a2332;
+    flex-shrink: 0;
+    gap: 10px;
+    z-index: 10;
+  }
+  .app-title { font-size: 17px; font-weight: 700; color: #00D4FF; flex: 1; }
+  .app-title span { color: #06D6A0; }
+  .status-pill {
+    font-size: 10px; padding: 3px 8px; border-radius: 10px;
+    background: #1a2332; color: #06D6A0;
+    border: 1px solid #06D6A033; white-space: nowrap;
+  }
+  .hamburger {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: #1a2332; border: 1px solid #1a2332;
+    color: #e0e6f0; font-size: 16px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* Canvas area */
+  .canvas {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background: radial-gradient(ellipse at center, #0D1525 0%, #0A0E17 60%);
+  }
+
+  /* Stars background */
+  .star {
+    position: absolute;
+    border-radius: 50%;
+    background: #ffffff;
+    opacity: 0;
+    animation: twinkle var(--dur) ease-in-out infinite;
+    animation-delay: var(--delay);
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0; }
+    50% { opacity: var(--bright); }
+  }
+
+  /* ---- LAYER 1: Main Planet ---- */
+  .main-planet {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 180px; height: 180px;
+    z-index: 1;
+  }
+  .planet-body {
+    width: 180px; height: 180px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, 
+      #0a1a2a 0%, #0d2a3a 15%, #102030 30%, 
+      #162840 50%, #0a1520 70%, #060e18 100%);
+    box-shadow:
+      0 0 60px #00D4FF22,
+      0 0 30px #00D4FF11 inset,
+      0 0 80px #06D6A011,
+      inset 0 -20px 40px #00D4FF08;
+    position: relative;
+    overflow: hidden;
+  }
+  /* Surface bands */
+  .planet-body::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background:
+      linear-gradient(to bottom,
+        transparent 0%, #00D4FF06 20%, transparent 40%,
+        #00D4FF04 55%, transparent 75%, #06D6A005 90%);
+  }
+  /* Breathing pulse */
+  .planet-body.pulse {
+    animation: breathe 2s ease-in-out infinite;
+  }
+  @keyframes breathe {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 60px #00D4FF22, 0 0 30px #00D4FF11 inset, 0 0 80px #06D6A011; }
+    50% { transform: scale(1.06); box-shadow: 0 0 90px #00D4FF44, 0 0 50px #00D4FF22 inset, 0 0 120px #06D6A022; }
+  }
+
+  /* Star ring */
+  .star-ring {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 260px; height: 70px;
+    transform: translate(-50%, -50%);
+    border: 1.5px solid #00D4FF22;
+    border-radius: 50%;
+    z-index: 0;
+    animation: rotateRing 20s linear infinite;
+  }
+  .star-ring::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 50%;
+    border: 1px solid #06D6A011;
+    opacity: 0.5;
+  }
+  .star-ring::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 0.5px dashed #00D4FF11;
+  }
+  @keyframes rotateRing {
+    from { transform: translate(-50%, -50%) rotate(0deg) rotateX(70deg); }
+    to { transform: translate(-50%, -50%) rotate(360deg) rotateX(70deg); }
+  }
+
+  /* Musical notes on ring */
+  .note {
+    position: absolute;
+    color: #00D4FF;
+    font-size: 18px;
+    z-index: 0;
+    animation: noteFloat var(--dur) ease-in-out infinite;
+    animation-delay: var(--delay);
+    text-shadow: 0 0 8px #00D4FF44;
+    pointer-events: none;
+  }
+  @keyframes noteFloat {
+    0%, 100% { transform: translateY(0) scale(1); opacity: 0.6; }
+    25% { transform: translateY(-12px) scale(1.2); opacity: 1; }
+    50% { transform: translateY(0) scale(0.9); opacity: 0.4; }
+    75% { transform: translateY(8px) scale(1.1); opacity: 0.8; }
+  }
+  .note.cyan { color: #00D4FF; }
+  .note.green { color: #06D6A0; }
+  .note.white { color: #8899aa; }
+
+  /* ---- LAYER 2: Mini planets ---- */
+  .mini-planet {
+    position: absolute;
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    z-index: 2;
+    cursor: pointer;
+    transition: transform 0.2s;
+    animation: floatDrift var(--drift-dur) ease-in-out infinite;
+    animation-delay: var(--drift-delay);
+  }
+  .mini-planet:active { transform: scale(1.15); }
+  .mini-body {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%,
+      #0e1a2a 0%, #142535 50%, #0a1520 100%);
+    box-shadow:
+      0 0 20px var(--glow),
+      0 0 8px var(--glow) inset;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    border: 1px solid var(--glow);
+  }
+  .mini-icon { font-size: 16px; line-height: 1; }
+  .mini-status {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--status-color);
+    box-shadow: 0 0 6px var(--status-color);
+  }
+  .mini-label {
+    font-size: 8px;
+    color: #5a6a80;
+    max-width: 44px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  @keyframes floatDrift {
+    0%, 100% { transform: translate(0, 0); }
+    20% { transform: translate(var(--dx1), var(--dy1)); }
+    40% { transform: translate(var(--dx2), var(--dy2)); }
+    60% { transform: translate(var(--dx3), var(--dy3)); }
+    80% { transform: translate(var(--dx4), var(--dy4)); }
+  }
+
+  /* Mini planet detail popup */
+  .mini-detail {
+    display: none;
+    position: absolute;
+    z-index: 20;
+    background: #0E1320;
+    border: 1px solid #1a2332;
+    border-radius: 12px;
+    padding: 12px 14px;
+    min-width: 160px;
+    font-size: 11px;
+    box-shadow: 0 8px 24px #00000066;
+    pointer-events: auto;
+  }
+  .mini-detail.show { display: block; }
+  .mini-detail .md-name {
+    font-size: 13px; color: #00D4FF; font-weight: 600; margin-bottom: 6px;
+  }
+  .mini-detail .md-row {
+    display: flex; justify-content: space-between; padding: 3px 0;
+    color: #8899aa; font-size: 10px;
+  }
+  .mini-detail .md-row .md-val { color: #c0c8d4; }
+
+  /* Close button for detail */
+  .md-close {
+    position: absolute;
+    top: 6px; right: 8px;
+    background: none; border: none;
+    color: #5a6a80; font-size: 14px;
+    cursor: pointer;
+  }
+
+  /* Status text */
+  .status-text {
+    position: absolute;
+    bottom: 40px;
+    width: 100%;
+    text-align: center;
+    color: #5a6a80;
+    font-size: 13px;
+    z-index: 5;
+    animation: statusPulse 3s ease-in-out infinite;
+    letter-spacing: 1px;
+  }
+  .status-text .dot {
+    display: inline-block;
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: #00D4FF;
+    margin-left: 3px;
+    animation: dotBlink 1.4s ease-in-out infinite;
+  }
+  .status-text .dot:nth-child(2) { animation-delay: 0.2s; }
+  .status-text .dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes dotBlink {
+    0%, 100% { opacity: 0.2; }
+    50% { opacity: 1; }
+  }
+  @keyframes statusPulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+  }
+
+  /* Voice wave indicator (when listening) */
+  .voice-wave {
+    position: absolute;
+    bottom: 70px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 3px;
+    z-index: 5;
+    opacity: 0.4;
+  }
+  .voice-wave .bar {
+    width: 3px;
+    background: #00D4FF;
+    border-radius: 2px;
+    animation: waveJump 0.6s ease-in-out infinite;
+  }
+  .voice-wave .bar:nth-child(1) { height: 8px; animation-delay: 0s; }
+  .voice-wave .bar:nth-child(2) { height: 16px; animation-delay: 0.1s; }
+  .voice-wave .bar:nth-child(3) { height: 24px; animation-delay: 0.2s; }
+  .voice-wave .bar:nth-child(4) { height: 16px; animation-delay: 0.3s; }
+  .voice-wave .bar:nth-child(5) { height: 8px; animation-delay: 0.4s; }
+  @keyframes waveJump {
+    0%, 100% { transform: scaleY(1); opacity: 0.6; }
+    50% { transform: scaleY(1.4); opacity: 1; }
+  }
+
+  /* Glow ring around main planet (subtle) */
+  .glow-ring {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    border: 1px solid transparent;
+    z-index: 1;
+    pointer-events: none;
+    animation: glowPulse 4s ease-in-out infinite;
+  }
+  @keyframes glowPulse {
+    0%, 100% { box-shadow: 0 0 40px #00D4FF11, 0 0 20px #00D4FF08 inset; }
+    50% { box-shadow: 0 0 80px #00D4FF33, 0 0 40px #00D4FF18 inset; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Topbar -->
+<div class="topbar">
+  <div class="app-title">Ai<span>Control</span>All</div>
+  <div class="status-pill">&#9679; M:12 S:7 T:5 D:8</div>
+  <button class="hamburger">&#9776;</button>
+</div>
+
+<!-- Canvas -->
+<div class="canvas" id="canvas">
+
+  <!-- Background stars -->
+  <div class="star" style="left:10%;top:8%;width:2px;height:2px;--dur:3s;--bright:0.8;--delay:0s"></div>
+  <div class="star" style="left:25%;top:5%;width:1px;height:1px;--dur:4s;--bright:0.6;--delay:1s"></div>
+  <div class="star" style="left:40%;top:12%;width:2px;height:2px;--dur:2.5s;--bright:0.7;--delay:2s"></div>
+  <div class="star" style="left:60%;top:3%;width:1px;height:1px;--dur:5s;--bright:0.9;--delay:0.5s"></div>
+  <div class="star" style="left:75%;top:10%;width:2px;height:2px;--dur:3.5s;--bright:0.5;--delay:1.5s"></div>
+  <div class="star" style="left:88%;top:6%;width:1px;height:1px;--dur:4.5s;--bright:0.7;--delay:2.5s"></div>
+  <div class="star" style="left:5%;top:88%;width:2px;height:2px;--dur:3s;--bright:0.6;--delay:0.8s"></div>
+  <div class="star" style="left:15%;top:80%;width:1px;height:1px;--dur:6s;--bright:0.8;--delay:3s"></div>
+  <div class="star" style="left:80%;top:82%;width:2px;height:2px;--dur:4s;--bright:0.5;--delay:1.2s"></div>
+  <div class="star" style="left:92%;top:75%;width:1px;height:1px;--dur:3.8s;--bright:0.7;--delay:0.3s"></div>
+  <div class="star" style="left:50%;top:92%;width:2px;height:2px;--dur:5s;--bright:0.4;--delay:2.2s"></div>
+  <div class="star" style="left:35%;top:85%;width:1px;height:1px;--dur:3.2s;--bright:0.6;--delay:1.8s"></div>
+
+  <!-- Glow ring -->
+  <div class="glow-ring"></div>
+
+  <!-- Star ring -->
+  <div class="star-ring"></div>
+
+  <!-- Notes on ring -->
+  <div class="note cyan" style="top:30%;left:20%;--dur:2.8s;--delay:0s;">♪</div>
+  <div class="note green" style="top:28%;left:42%;--dur:3.2s;--delay:0.4s;">♫</div>
+  <div class="note white" style="top:32%;left:65%;--dur:2.5s;--delay:0.8s;">♩</div>
+  <div class="note cyan" style="top:27%;left:78%;--dur:3.5s;--delay:1.2s;">♬</div>
+  <div class="note green" style="top:35%;left:32%;--dur:3.0s;--delay:1.6s;">♪</div>
+  <div class="note white" style="top:25%;left:55%;--dur:2.7s;--delay:0.2s;">♫</div>
+  <div class="note cyan" style="top:33%;left:88%;--dur:3.8s;--delay:2.0s;">♩</div>
+  <div class="note green" style="top:22%;left:10%;--dur:2.9s;--delay:1.0s;">♬</div>
+
+  <!-- Main planet (layer 1) -->
+  <div class="main-planet">
+    <div class="planet-body pulse"></div>
+  </div>
+
+  <!-- Mini planets (layer 2) -->
+  <!-- Camera -->
+  <div class="mini-planet" id="mp-camera" onclick="toggleDetail(event, 'camera')"
+    style="top:8%;left:58%;
+      --glow:#ff5e5e33;--status-color:#06D6A0;
+      --drift-dur:7s;--drift-delay:0s;
+      --dx1:8px;--dy1:-6px;--dx2:-5px;--dy2:4px;--dx3:-8px;--dy3:-2px;--dx4:4px;--dy4:-4px;">
+    <div class="mini-body">
+      <span class="mini-icon">&#128247;</span>
+      <span class="mini-status"></span>
+      <span class="mini-label">摄像头</span>
+    </div>
+  </div>
+
+  <!-- Mic -->
+  <div class="mini-planet" id="mp-mic" onclick="toggleDetail(event, 'mic')"
+    style="top:15%;left:80%;
+      --glow:#00D4FF33;--status-color:#06D6A0;
+      --drift-dur:8s;--drift-delay:1.5s;
+      --dx1:-6px;--dy1:5px;--dx2:8px;--dy2:-3px;--dx3:-4px;--dy3:-6px;--dx4:5px;--dy4:3px;">
+    <div class="mini-body">
+      <span class="mini-icon">&#127908;</span>
+      <span class="mini-status"></span>
+      <span class="mini-label">麦克风</span>
+    </div>
+  </div>
+
+  <!-- Speaker -->
+  <div class="mini-planet" id="mp-speaker" onclick="toggleDetail(event, 'speaker')"
+    style="top:65%;left:85%;
+      --glow:#ffaa0033;--status-color:#06D6A0;
+      --drift-dur:6s;--drift-delay:3s;
+      --dx1:5px;--dy1:-4px;--dx2:-7px;--dy2:6px;--dx3:6px;--dy3:-5px;--dx4:-3px;--dy4:2px;">
+    <div class="mini-body">
+      <span class="mini-icon">&#128266;</span>
+      <span class="mini-status"></span>
+      <span class="mini-label">扬声器</span>
+    </div>
+  </div>
+
+  <!-- Screen -->
+  <div class="mini-planet" id="mp-screen" onclick="toggleDetail(event, 'screen')"
+    style="top:72%;left:12%;
+      --glow:#00D4FF33;--status-color:#06D6A0;
+      --drift-dur:7.5s;--drift-delay:0.8s;
+      --dx1:-8px;--dy1:3px;--dx2:4px;--dy2:-6px;--dx3:-5px;--dy3:5px;--dx4:7px;--dy4:-2px;">
+    <div class="mini-body">
+      <span class="mini-icon">&#128421;</span>
+      <span class="mini-status"></span>
+      <span class="mini-label">屏幕</span>
+    </div>
+  </div>
+
+  <!-- GPS -->
+  <div class="mini-planet" id="mp-gps" onclick="toggleDetail(event, 'gps')"
+    style="top:50%;left:75%;
+      --glow:#06D6A033;--status-color:#06D6A0;
+      --drift-dur:9s;--drift-delay:2s;
+      --dx1:6px;--dy1:-5px;--dx2:-4px;--dy2:7px;--dx3:-7px;--dy3:-3px;--dx4:5px;--dy4:4px;">
+    <div class="mini-body">
+      <span class="mini-icon">&#127758;</span>
+      <span class="mini-status"></span>
+      <span class="mini-label">定位</span>
+    </div>
+  </div>
+
+  <!-- Sensors -->
+  <div class="mini-planet" id="mp-sensor" onclick="toggleDetail(event, 'sensor')"
+    style="top:40%;left:8%;
+      --glow:#8899aa33;--status-color:#06D6A0;
+      --drift-dur:8.5s;--drift-delay:4s;
+      --dx1:-5px;--dy1:-6px;--dx2:7px;--dy2:2px;--dx3:-6px;--dy3:4px;--dx4:4px;--dy4:-5px;">
+    <div class="mini-body">
+      <span class="mini-icon">&#9881;</span>
+      <span class="mini-status"></span>
+      <span class="mini-label">传感器</span>
+    </div>
+  </div>
+
+  <!-- Headphones -->
+  <div class="mini-planet" id="mp-headphone" onclick="toggleDetail(event, 'headphone')"
+    style="top:25%;left:35%;
+      --glow:#5a6a8033;--status-color:#f0a030;
+      --drift-dur:10s;--drift-delay:0.5s;
+      --dx1:4px;--dy1:-7px;--dx2:-6px;--dy2:3px;--dx3:8px;--dy3:-4px;--dx4:-4px;--dy4:6px;">
+    <div class="mini-body" style="opacity:0.6">
+      <span class="mini-icon">&#127911;</span>
+      <span class="mini-status" style="background:#f0a030;box-shadow:0 0 4px #f0a030;"></span>
+      <span class="mini-label">耳机</span>
+    </div>
+  </div>
+
+  <!-- Watch -->
+  <div class="mini-planet" id="mp-watch" onclick="toggleDetail(event, 'watch')"
+    style="top:55%;left:45%;
+      --glow:#5a6a8033;--status-color:#f0a030;
+      --drift-dur:11s;--drift-delay:2.5s;
+      --dx1:-7px;--dy1:4px;--dx2:5px;--dy2:-5px;--dx3:-3px;--dy3:6px;--dx4:6px;--dy4:-3px;">
+    <div class="mini-body" style="opacity:0.6">
+      <span class="mini-icon">&#8986;</span>
+      <span class="mini-status" style="background:#f0a030;box-shadow:0 0 4px #f0a030;"></span>
+      <span class="mini-label">手表</span>
+    </div>
+  </div>
+
+  <!-- Detail popup -->
+  <div class="mini-detail" id="miniDetail" onclick="event.stopPropagation()">
+    <button class="md-close" onclick="closeDetail()">&#10005;</button>
+    <div id="detailContent"></div>
+  </div>
+
+  <!-- Voice wave -->
+  <div class="voice-wave">
+    <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+    <div class="bar"></div><div class="bar"></div>
+  </div>
+
+  <!-- Status -->
+  <div class="status-text">
+    正在聆听<span class="dot"></span><span class="dot"></span><span class="dot"></span>
+  </div>
+
+</div>
+
+<script>
+const deviceData = {
+  camera: { name: '摄像头', type: '输入设备', status: '待机', tool: 'CameraTool', detail: '后置50MP + 前置32MP' },
+  mic: { name: '麦克风', type: '输入设备', status: '待机', tool: 'SpeechTool', detail: '双麦降噪 / 48kHz' },
+  speaker: { name: '扬声器', type: '输出设备', status: '空闲 60%', tool: 'SpeechTool', detail: '双立体声 / TTS' },
+  screen: { name: '屏幕', type: '输出设备', status: '1440×3200', tool: 'ScreenTool(计划)', detail: 'AMOLED 120Hz' },
+  gps: { name: 'GPS 定位', type: '输入设备', status: '待机', tool: 'LocationTool(计划)', detail: '上次: 39.9N 116.4E' },
+  sensor: { name: '运动传感器', type: '输入设备组', status: '采集中 50Hz', tool: 'SensorTool(计划)', detail: '加速度+陀螺仪+磁力' },
+  headphone: { name: '蓝牙耳机', type: '外设', status: '未连接', tool: 'BluetoothTool(计划)', detail: 'A2DP + HFP' },
+  watch: { name: '蓝牙手表', type: '外设', status: '未连接', tool: 'HealthTool(计划)', detail: 'BLE 心率+步数+血氧' }
+};
+
+const detailEl = document.getElementById('miniDetail');
+const detailContent = document.getElementById('detailContent');
+let activeDetail = null;
+
+function toggleDetail(event, id) {
+  event.stopPropagation();
+  if (activeDetail === id) { closeDetail(); return; }
+  activeDetail = id;
+  const d = deviceData[id];
+  const rect = event.currentTarget.getBoundingClientRect();
+  const canvasRect = document.getElementById('canvas').getBoundingClientRect();
+
+  let left = rect.left - canvasRect.left + 50;
+  let top = rect.top - canvasRect.top - 10;
+  if (left + 170 > canvasRect.width) left = rect.left - canvasRect.left - 160;
+  if (top < 0) top = 10;
+
+  detailEl.style.left = left + 'px';
+  detailEl.style.top = top + 'px';
+
+  detailContent.innerHTML = `
+    <div class="md-name">${d.name}</div>
+    <div class="md-row"><span>类型</span><span class="md-val">${d.type}</span></div>
+    <div class="md-row"><span>状态</span><span class="md-val" style="color:#06D6A0">${d.status}</span></div>
+    <div class="md-row"><span>详情</span><span class="md-val">${d.detail}</span></div>
+    <div class="md-row"><span>MCP</span><span class="md-val" style="color:#00D4FF">${d.tool}</span></div>
+  `;
+  detailEl.classList.add('show');
+}
+
+function closeDetail() {
+  detailEl.classList.remove('show');
+  activeDetail = null;
+}
+
+document.getElementById('canvas').addEventListener('click', closeDetail);
+</script>
+
+</body>
+</html>

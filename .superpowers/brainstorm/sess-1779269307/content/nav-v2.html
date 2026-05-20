@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>AiControlAll — 六标签导航原型</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    background: #0A0E17;
+    color: #e0e6f0;
+    max-width: 420px;
+    margin: 0 auto;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .proto-note {
+    background: #1a2332;
+    border-bottom: 1px solid #00D4FF33;
+    padding: 8px 16px;
+    font-size: 11px;
+    color: #00D4FF;
+    text-align: center;
+  }
+  .proto-note span { color: #06D6A0; }
+
+  /* ===== TOP BAR ===== */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: #0A0E17;
+    border-bottom: 1px solid #1a2332;
+    flex-shrink: 0;
+  }
+  .app-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #00D4FF;
+    letter-spacing: 0.5px;
+  }
+  .app-title span { color: #06D6A0; }
+  .status-pill {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    background: #1a2332;
+    color: #06D6A0;
+    border: 1px solid #06D6A033;
+  }
+
+  /* ===== BOTTOM TAB BAR (6 tabs, compact) ===== */
+  .tabbar {
+    display: flex;
+    background: #0E1320;
+    border-top: 1px solid #1a2332;
+    flex-shrink: 0;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 8px 0;
+    text-align: center;
+    font-size: 10px;
+    font-family: inherit;
+    color: #5a6a80;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    position: relative;
+  }
+  .tab-btn .tab-icon { font-size: 16px; line-height: 1; }
+  .tab-btn .tab-label { font-size: 9px; letter-spacing: 0.3px; }
+  .tab-btn.active { color: #00D4FF; }
+  .tab-btn.active::after {
+    content: '';
+    display: block;
+    width: 20px;
+    height: 2px;
+    background: #00D4FF;
+    margin-top: 2px;
+    border-radius: 1px;
+  }
+  .tab-badge {
+    position: absolute;
+    top: 0px;
+    right: 2px;
+    background: #06D6A0;
+    color: #0A0E17;
+    font-size: 8px;
+    padding: 1px 4px;
+    border-radius: 6px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .tab-icon-wrap { position: relative; }
+
+  /* ===== PAGE CONTAINER ===== */
+  .page {
+    flex: 1;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .page.active { display: flex; }
+
+  .page-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid #1a2332;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .page-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #00D4FF;
+  }
+  .page-count {
+    font-size: 11px;
+    color: #5a6a80;
+    margin-left: auto;
+  }
+  .page-search {
+    margin: 8px 16px;
+    padding: 9px 12px;
+    background: #1a2332;
+    border: 1px solid #1a2332;
+    border-radius: 8px;
+    color: #e0e6f0;
+    font-family: inherit;
+    font-size: 12px;
+    outline: none;
+    flex-shrink: 0;
+  }
+  .page-search:focus { border-color: #00D4FF; }
+  .page-search::placeholder { color: #5a6a80; }
+
+  .page-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 16px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* ===== CHAT PAGE ===== */
+  .chat-msg {
+    padding: 10px 0;
+    margin: 2px 0;
+    font-size: 13px;
+    line-height: 1.5;
+    border-bottom: 1px solid #1a233222;
+  }
+  .chat-msg .role {
+    font-size: 10px;
+    color: #5a6a80;
+    margin-bottom: 3px;
+  }
+  .chat-msg.user .role { color: #00D4FF; }
+  .chat-msg.agent .role { color: #06D6A0; }
+
+  /* ===== EXPANDABLE ITEMS ===== */
+  .list-item {
+    border-bottom: 1px solid #1a233244;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .list-item:hover { background: #0E1320; }
+  .list-item.expanded { background: #0E1320; }
+
+  .list-item-head {
+    display: flex;
+    align-items: center;
+    padding: 13px 0;
+    gap: 10px;
+    min-height: 44px;
+  }
+  .list-item-chevron {
+    font-size: 12px;
+    color: #5a6a80;
+    transition: transform 0.2s;
+    width: 16px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .list-item.expanded .list-item-chevron { transform: rotate(90deg); color: #00D4FF; }
+  .list-item-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .list-item-title {
+    font-size: 13px;
+    color: #e0e6f0;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .list-item-sub {
+    font-size: 10px;
+    color: #5a6a80;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .list-item-tags {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .tag {
+    font-size: 9px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: #1a2332;
+    color: #00D4FF;
+    white-space: nowrap;
+  }
+  .tag.green { color: #06D6A0; background: #1a2332; }
+  .tag.warn { color: #f0a030; background: #1a2332; }
+  .tag.red { color: #ff5c5c; background: #1a2332; }
+
+  /* Expanded body */
+  .list-item-body {
+    display: none;
+    padding: 0 0 14px 26px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #a0aab4;
+  }
+  .list-item.expanded .list-item-body { display: block; }
+  .list-item-body .kv {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 4px;
+  }
+  .list-item-body .kv-key { color: #5a6a80; }
+  .list-item-body .kv-val { color: #c0c8d4; }
+  .list-item-body .kv-val code {
+    background: #1a2332;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-family: inherit;
+    font-size: 11px;
+    color: #06D6A0;
+    word-break: break-all;
+  }
+  .list-item-body .actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .action-btn {
+    padding: 4px 12px;
+    font-size: 10px;
+    font-family: inherit;
+    background: #1a2332;
+    color: #e0e6f0;
+    border: 1px solid #1a2332;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: 0.15s;
+  }
+  .action-btn:hover { border-color: #00D4FF; color: #00D4FF; }
+  .action-btn.danger:hover { border-color: #ff5c5c; color: #ff5c5c; }
+
+  /* Empty state */
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #5a6a80;
+    font-size: 13px;
+    gap: 8px;
+    padding: 40px;
+  }
+
+  /* Chat input area */
+  .chat-input {
+    display: flex;
+    gap: 8px;
+    padding: 10px 16px;
+    border-top: 1px solid #1a2332;
+    background: #0A0E17;
+    flex-shrink: 0;
+  }
+  .chat-input input {
+    flex: 1;
+    padding: 10px 14px;
+    background: #1a2332;
+    border: 1px solid #1a2332;
+    border-radius: 20px;
+    color: #e0e6f0;
+    font-family: inherit;
+    font-size: 13px;
+    outline: none;
+  }
+  .chat-input input:focus { border-color: #00D4FF; }
+  .chat-input button {
+    padding: 0 16px;
+    background: #00D4FF;
+    color: #0A0E17;
+    border: none;
+    border-radius: 20px;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  /* Settings page specific */
+  .setting-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 0;
+    border-bottom: 1px solid #1a233244;
+  }
+  .setting-label { font-size: 13px; color: #e0e6f0; }
+  .setting-val { font-size: 12px; color: #5a6a80; text-align: right; }
+  .setting-input {
+    background: #1a2332;
+    border: 1px solid #1a2332;
+    border-radius: 6px;
+    padding: 6px 10px;
+    color: #e0e6f0;
+    font-family: inherit;
+    font-size: 12px;
+    width: 160px;
+    text-align: right;
+    outline: none;
+  }
+  .setting-input:focus { border-color: #00D4FF; }
+
+  .section-label {
+    font-size: 10px;
+    color: #5a6a80;
+    padding: 16px 0 6px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+</style>
+</head>
+<body>
+
+<div class="proto-note">&#9678; <span>PROTOTYPE</span> — 六标签导航 &middot; 点击项目展开/折叠 &middot; 点击底部标签切换页面</div>
+
+<!-- ==================== TOP BAR ==================== -->
+<div class="topbar">
+  <div class="app-title">Ai<span>Control</span>All</div>
+  <div class="status-pill">&#9679; M:12 S:7 T:5</div>
+</div>
+
+<!-- ==================== PAGE 1: 聊天 ==================== -->
+<div class="page active" id="page-chat">
+  <div class="page-list">
+    <div class="chat-msg user">
+      <div class="role">YOU &middot; 14:23</div>
+      帮我查一下今天的天气
+    </div>
+    <div class="chat-msg agent">
+      <div class="role">AGENT &middot; 14:23</div>
+      已调用 WeatherTool，北京：晴 22°C，湿度 45%
+    </div>
+    <div class="chat-msg user">
+      <div class="role">YOU &middot; 14:24</div>
+      打开客厅的灯
+    </div>
+    <div class="chat-msg agent">
+      <div class="role">AGENT &middot; 14:24</div>
+      &#10003; 已通过 SmartHomeTool 打开客厅灯光。亮度 70%。
+    </div>
+    <div class="chat-msg user">
+      <div class="role">YOU &middot; 14:25</div>
+      你有什么技能？
+    </div>
+    <div class="chat-msg agent">
+      <div class="role">AGENT &middot; 14:25</div>
+      我目前有 7 个技能：灯光控制、淘宝登录、天气查询、Obsidian 笔记、代码审查、邮件发送、MC 服务器管理。需要我展示详情吗？
+    </div>
+  </div>
+  <div class="chat-input">
+    <input placeholder="输入消息..." value="你有什么技能？" disabled>
+    <button>&rarr;</button>
+  </div>
+</div>
+
+<!-- ==================== PAGE 2: 历史 ==================== -->
+<div class="page" id="page-history">
+  <div class="page-header">
+    <span class="page-title">&#9776; 历史会话</span>
+    <span class="page-count">4 个</span>
+  </div>
+  <input class="page-search" placeholder="搜索历史...">
+  <div class="page-list" id="historyList">
+    <div class="list-item" onclick="toggleItem(this)">
+      <div class="list-item-head">
+        <span class="list-item-chevron">&#9654;</span>
+        <div class="list-item-info">
+          <div class="list-item-title">天气查询 + 智能家居控制</div>
+          <div class="list-item-sub">今天 14:23 &middot; 6 条消息 &middot; <span class="tag green">活跃</span></div>
+        </div>
+      </div>
+      <div class="list-item-body">
+        <div class="kv"><span class="kv-key">ID:</span><span class="kv-val"><code>3f7a-b2d1-4e89</code></span></div>
+        <div class="kv"><span class="kv-key">开始:</span><span class="kv-val">2026-05-20 14:23:05</span></div>
+        <div class="kv"><span class="kv-key">摘要:</span><span class="kv-val">用户查询天气后控制智能家居设备</span></div>
+        <div class="actions">
+          <button class="action-btn" onclick="event.stopPropagation()">继续对话</button>
+          <button class="action-btn danger" onclick="event.stopPropagation()">删除</button>
+        </div>
+      </div>
+    </div>
+    <div class="list-item" onclick="toggleItem(this)">
+      <div class="list-item-head">
+        <span class="list-item-chevron">&#9654;</span>
+        <div class="list-item-info">
+          <div class="list-item-title">代码审查：AiControlAll PR #3</div>
+          <div class="list-item-sub">昨天 10:15 &middot; 12 条消息</div>
+        </div>
+      </div>
+      <div class="list-item-body">
+        <div class="kv"><span class="kv-key">ID:</span><span class="kv-val"><code>8e2c-af45-1d90</code></span></div>
+        <div class="kv"><span class="kv-key">摘要:</span><span class="kv-val">审查 MemoryStore 和 DatabaseHelper 代码，发现 3 个问题</span></div>
+        <div class="actions">
+          <button class="action-btn" onclick="event.stopPropagation()">继续对话</button>
+          <button class="action-btn danger" onclick="event.stopPropagation()">删除</button>
+        </div>
+      </div>
+    </div>
+    <div class="list-item" onclick="toggleItem(this)">
+      <div class="list-item-head">
+        <span class="list-item-chevron">&#9654;</span>
+        <div class="list-item-info">
+          <div class="list-item-title">调试 DeepSeek tool_call id 字段</div>
+          <div class="list-item-sub">3 天前 &middot; 8 条消息 &middot; <span class="tag">已解决</span></div>
+        </div>
+      </div>
+      <div class="list-item-body" style="display:none">
+        <div class="kv"><span class="kv-key">ID:</span><span class="kv-val"><code>bc12-3d4e-5f67</code></span></div>
+        <div class="kv"><span class="kv-key">摘要:</span><span class="kv-val">修复了 tool_calls 回传时 id 字段丢失导致的 API 错误</span></div>
+        <div class="actions">
+          <button class="action-btn" onclick="event.stopPropagation()">继续对话</button>
+          <button class="action-btn danger" onclick="event.stopPropagation()">删除</button>
+        </div>
+      </div>
+    </div>
+    <div class="list-item" onclick="toggleItem(this)">
+      <div class="list-item-head">
+        <span class="list-item-chevron">&#9654;</span>
+        <div class="list-item-info">
+          <div class="list-item-title">小米设备 FTS5 兼容性测试</div>
+          <div class="list-item-sub">5 天前 &middot; 5 条消息 &middot; <span class="tag green">已解决</span></div>
+        </div>
+      </div>
+      <div class="list-item-body">
+        <div class="kv"><span class="kv-key">ID:</span><span class="kv-val"><code>d781-2abc-3def</code></span></div>
+        <div class="kv"><span class="kv-key">摘要:</span><span class="kv-val">确认 MIUI SQLite 不含 FTS5，已回退到 LIKE 搜索</span></div>
+        <div class="actions">
+          <button class="action-btn" onclick="event.stopPropagation()">继续对话</button>
+          <button class="action-btn danger" onclick="event.stopPropagation()">删除</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE 3: 记忆 ==================== -->
+<div class="page" id="page-memory">
+  <div class="page-header">
+    <span class="page-title">&#9670; 记忆</span>
+    <span class="page-count">12 条</span>
+  </div>
+  <input class="page-search" placeholder="搜索记忆..." oninput="filterList(this, 'memoryList')">
+  <div class="page-list" id="memoryList">
+    <div class="list-item" onclick="toggleItem(this)">
+      <div class="list-item-head">
+        <span class="list-item-chevron">&#9654;</span>
+        <div class="list-item-info">
+          <div class="list-item-title">用户偏好深色科技风 UI 配色</div>
+          <div class="list-item-sub">使用 3 次 &middot; 2 天前</div>
+        </div>
+        <span class="tag">user</span>
+      </div>
+      <div class="list-item-body">
+        <div class="kv"><span class="kv-key">目标:</span><span class="kv-val">user</span></div>
+        <div class="kv"><span class="kv-key">标签:</span><span class="kv-val">ui, preference, theme</span></div>
+        <div class="kv"><span class="kv-key">完整内容:</span><span class="kv-val">用户偏好深色科技风(dark tech aesthetic), 配色深蓝黑底(#0A0E17)+#1A2332卡片+青色(#00D4FF)绿色(#06D6A0)霓虹点缀</span></div>
+        <div class="actions">
+          <button class="action-btn" onclick="event.stopPropagation()">编辑</button>
+          <button class="action-btn danger" onclick="event.stopPropagation()">删除</button>
+        </div>
+      </div>
+    </div>
+    <div class="list-item" onclick="toggleItem(this)">
+      <div class="list-item-head">
+        <span class="list-item-chevron">&#9654;</span>
+        <div class="list-item-info">
+          <div class="list-item-title">测试设备: 小米 1ee77cd6, MIUI, 无FTS5</div>
+          <div class="list-item-sub">使用 5 次 &middot; 3 天前</div>
+        </div>
+        <span class="tag">memory</span>
+      </div>
+      <div class="list-item-body">
+        <div class="kv"><span class="kv-key">目标:</span><span class="kv-val">memory</span></div>
+        <div class="kv"><span class="kv-key">标签:</span><span class="kv-val">android, xiaomi, sqlite, fts5</span></div>
+        <div class="kv"><span class="kv-key">完整内容:</span><span class="kv-val">小米MIUI设备(测试机: 1ee77cd6)的SQLite不包含FTS5模块。DatabaseHelper已适配 LIKE 回退搜索。</span></div>
+        <div class="actions">
+          <button class="action-btn" onclick="event.stopPropagation()">编辑</button>
+          <button class="action-btn danger" onclick="event.stopPropagation()">删除</button>
+        </div>
+      </div>
+    </div>
+    <div class="list-item" onclick="toggleItem(this)">
+      <div class="list-item-head">
+        <span class="list-item-chevron">&#9654;</span>
+        <div class="list-item-info">
+          <div class="list-item-title">DeepSeek tool_call id 须原样回传</div>
+          <div class="list-item-sub">使用 8 次 &middot; 5 天前</div>
+        </div>
+        <span class="tag">memory</span>
+      </div>
+      <div class="list-item-body">
+        <div class="kv"><span class="kv-key">目标:</span><span class="kv-val">memory</span></div>
+        <div class="kv"><span class="kv-key">标签:</span><span class="kv-val">deepseek, api, tool-calling</span></div>
+        <div class="kv"><span class="kv-key">完整内容:</span><span class="kv-val">DeepSeek tool call fix: LLM返回的tool_calls含id字段(如"call_xxxx"), 回传须保留原始{id,type,function}格式。</span></div>
+        <div class="actions">
+          <button class="action-btn" onclick="event.stopPropagation()">编辑</button>
+          <button class="action-btn danger" onclick="event.stopPropagation()">删除</button>
+        </div>
+      </div>
+    </div>
+    <div class="list-item" onclick="toggleItem(this)">
+      <div class="list-item-head">
+        <span class="list-item-chevron">&#9654;</span>
+        <div class="list-item-info">
+          <div class="list-item-title">配置文件使用 JSON 格式存储</div>
+          <div class="list-item-sub">使用 2 次 &middot; 6 天前</div>
+        </div>
+        <span class="tag">user</span>
+      </div>
+      <div class="list-item-body">
+        <div class="kv"><span class="kv-key">目标:</span><span class="kv-val">user</span></div>
+        <div class="kv"><span class="kv-key">标签:</span><span class="kv-val">config, preference</span></div>
+        <div class="kv"><span class="kv-key">完整内容:</span><span class="kv-val">用户偏好JSON文件存储配置(ConfigManager)非SharedPreferences</span></div>
+        <div class="actions">
+          <button class="action-btn" onclick="event.stopPropagation()">编辑</button>
+          <button class="action-btn danger" onclick="event.stopPropagation()">删除</button>
+        </div>
+      </div>
+    </div>
+    <div class="list-item" onclick="toggleItem(this)">
+      <div class="list-item-head">
+        <span class="list-item-chevron">&#9654;</span>
+        <div class="list-item-info">
+          <div class="list-item-title">远程服务器 sunri@10.6.221.181:10022</div>
+          <div class="list-item-sub">使用 1 次 &middot; 7 天前</div>
+        </div>
+        <span class="tag">memory</span>
+      </div>
+      <div class="list-item-body">
+        <div class="kv"><span class="kv-key">目标:</span><span class="kv-val">memory</span></div>
+        <div class="kv"><span class="kv-key">标签:</span><span class="kv-val">server, ssh, debian</span></div>
+        <div class="kv"><span class="kv-key">完整内容:</span><span class="kv-val">远程服务器 sunri@10.6.221.181:10022 是 Linx GNU/Linux 6.0.80 (Debian Jessie)</span></div>
+        <div class="actions">
+          <button class="action-btn" onclick="event.stopPropagation()">编辑</button>
+          <button class="action-btn danger" onclick="event.stopPropagation()">删除</button>
+        </div>
+      </div>
+    </div>
+    <div class="list-item" style="opacity:0.4; cursor:default" onclick="return false">
+      <div class="list-item-head">
+        <span class="list-item-chevron" style="visibility:hidden">&#9654;</span>
+        <div class="list-item-info">
+          <div class="list-item-title">… 还有 6 条更早的记忆</div>
+          <div class="list-item-sub">向上滚动加载更多</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE 4: 工具 ==================== -->
+<div class="page" id="page-tools">
+  <div class="page-header">
+    <span class="page-title">&#9874; 工具</span>
+    <span class="page-count">5 个</span>
+  </div>
+  <input class="page-search" placeholder="搜索工具..." oninput="filterList(this, 'toolList')">
+  <div class="page-list" id="toolList">
+    <div class="list-item" onclick="toggleItem(this)">
+      <div class="list-item-head">
+        <span class="list-item-chevron">&#9654;</span>
+        <div class="list-item-info">
+          <div class="list-item-title">&#128247; CameraTool</div>
+          <div class="list-item-sub">拍照 / 扫码</div>
+        </div>
+        <span class="tag green">已注册</span>
+      </div>
+      <div class="list-item-body">
+        <div class="kv"><span class="kv-key">接口:</span><span class="kv-val">McpTool</span></div>
+        <div class="kv"><span class="kv-key">权限:</span><span class="kv-val">CAMERA</span></div>
+        <div class="kv"><span class="kv-key">参数:</span><span class="kv-val">action: "capture"|"scan"</span></div>
+        <div class="actions">
+          <button class="action-btn" onclick="event.stopPropagation()">测试</button>
+          <button class="action-btn danger" style="opacity:0.4; cursor:default">内置</button>
+        </div>
+      </div>
+    </div>
+    <div class="list-item" onclick="toggleItem(this)">
+      <div class="list-item-head">
+        <span class="list-item-chevron">&#9654;</span>
+        <div class="list-item-info">
+          <div class="list-item-title">&#128266; SpeechTool</div>
+          <div class="list-item-sub">TTS 语音合成</div>
+        </div>
+        <span class="tag green">已注册</span>
+      </div>
+      <div class="list-item-body">
+        <div class="kv"><span class="kv-key">接口:</span><span class="kv-val">McpTool</span></div>
+        <div class="kv"><span class="kv-key">引擎:</span><span class="kv-val">Android TTS</span></div>
+        <div class="kv"><span class="kv-key">参数:</span><span class="kv-val">text: String, language: String</span></div>
+        <div class="actions">
+          <button class="action-btn" onclick="event.stopPropagation()">测试</button>
+          <button class="action-btn danger" style="opacity:0.4; cursor:default">内置</button>
+        </div>
+      </div>
+    </div>
+    <div class="list-item" onclick="toggleItem(this)">
+      <div class="list-item-head">
+        <span class="list-item-chevron">&#9654;</span>
+        <div class="list-item-info">
+          <div class="list-item-title">&#128269; SearchMemoriesTool</div>
+          <div class="list-item-sub">FTS5 全文搜索记忆和会话</div>
+        </div>
+        <span class="tag green">已注册</span>
+      </div>
+      <div class="list-item-body">
+        <div class="kv"><span class="kv-key">接口:</span><span class="kv-val">McpTool</span></div>
+        <div class="kv"><span class="kv-key">依赖:</span><span class="kv-val">MemoryStore, SessionStore</span></div>
+        <div class="kv"><span class="kv-key">参数:</span><span class="kv-val">query: String, limit: Int</span></div>
+        <div class="actions">
+          <button class="action-btn" onclick="event.stopPropagation()">测试</button>
+        </div>
+      </div>
+    </div>
+    <div class="list-item" onclick="toggleItem(this)">
+      <div class="list-item-head">
+        <span class="list-item-chevron">&#9654;</span>
+        <div class="list-item-info">
+          <div class="list-item-title">&#127760; WebSearchTool</div>
+          <div class="list-item-sub">DuckDuckGo 网页搜索</div>
+        </div>
+        <span class="tag warn">计划中</span>
+      </div>
+      <div class="list-item-body">
+        <div class="kv"><span class="kv-key">状态:</span><span class="kv-val">未实现 — Phase 4</span></div>
+        <div class="kv"><span class="kv-key">依赖:</span><span class="kv-val">OkHttp + DuckDuckGo API</span></div>
+      </div>
+    </div>
+    <div class="list-item" onclick="toggleItem(this)">
+      <div class="list-item-head">
+        <span class="list-item-chevron">&#9654;</span>
+        <div class="list-item-info">
+          <div class="list-item-title">&#127968; SmartHomeTool</div>
+          <div class="list-item-sub">Matter / Home Assistant 网关</div>
+        </div>
+        <span class="tag warn">计划中</span>
+      </div>
+      <div class="list-item-body">
+        <div class="kv"><span class="kv-key">状态:</span><span class="kv-val">未实现 — Phase 5</span></div>
+        <div class="kv"><span class="kv-key">协议:</span><span class="kv-val">Matter, Home Assistant REST</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE 5: 技能 ==================== -->
+<div class="page" id="page-skills">
+  <div class="page-header">
+    <span class="page-title">&#9733; 技能</span>
+    <span class="page-count">7 个</span>
+  </div>
+  <input class="page-search" placeholder="搜索技能..." oninput="filterList(this, 'skillList')">
+  <div class="page-list" id="skillList">
+    <div class="list-item" onclick="toggleItem(this)">
+      <div class="list-item-head">
+        <span class="list-item-chevron">&#9654;</span>
+        <div class="list-item-info">
+          <div class="list-item-title">get-weather</div>
+          <div class="list-item-sub">通过 Open-Meteo API 获取实时天气</div>
+        </div>
+        <span class="tag green">95%</span>
+      </div>
+      <div class="list-item-body">
+        <div class="kv"><span class="kv-key">名称:</span><span class="kv-val"><code>get-weather</code></span></div>
+        <div class="kv"><span class="kv-key">置信度:</span><span class="kv-val">95% (v3, 使用 12 次)</span></div>
+        <div class="kv"><span class="kv-key">步骤:</span><span class="kv-val">1. 解析地点 2. 调用 Open-Meteo 3. 格式化返回</span></div>
+        <div class="kv"><span class="kv-key">陷阱:</span><span class="kv-val">注意城市名中文→英文转换</span></div>
+        <div class="actions">
+          <button class="action-btn" onclick="event.stopPropagation()">编辑</button>
+          <button class="action-btn danger" onclick="event.stopPropagation()">禁用</button>
+        </div>
+      </div>
+    </div>
+    <div class="list-item" onclick="toggleItem(this)">
+      <div class="list-item-head">
+        <span class="list-item-chevron">&#9654;</span>
+        <div class="list-item-info">
+          <div class="list-item-title">adjust-smart-light</div>
+          <div class="list-item-sub">调整智能灯光亮度和色温</div>
+        </div>
+        <span class="tag green">92%</span>
+      </div>
+      <div class="list-item-body">
+        <div class="kv"><span class="kv-key">名称:</span><span class="kv-val"><code>adjust-smart-light</code></span></div>
+        <div class="kv"><span class="kv-key">置信度:</span><span class="kv-val">92% (v2, 使用 8 次)</span></div>
+        <div class="actions">
+          <button class="action-btn" onclick="event.stopPropagation()">编辑</button>
+          <button class="action-btn danger" onclick="event.stopPropagation()">禁用</button>
+        </div>
+      </div>
+    </div>
+    <div class="list-item" onclick="toggleItem(this)">
+      <div class="list-item-head">
+        <span class="list-item-chevron">&#9654;</span>
+        <div class="list-item-info">
+          <div class="list-item-title">taobao-sms-login</div>
+          <div class="list-item-sub">Playwright + 椰子接码 短信登录</div>
+        </div>
+        <span class="tag green">88%</span>
+      </div>
+      <div class="list-item-body">
+        <div class="kv"><span class="kv-key">名称:</span><span class="kv-val"><code>taobao-sms-login</code></span></div>
+        <div class="kv"><span class="kv-key">置信度:</span><span class="kv-val">88% (v1, 使用 4 次)</span></div>
+        <div class="kv"><span class="kv-key">陷阱:</span><span class="kv-val">keyword="验证码"不编码URL; 验证码提取 re.search(r'验证码(\d{4,6})', msg)</span></div>
+        <div class="actions">
+          <button class="action-btn" onclick="event.stopPropagation()">编辑</button>
+          <button class="action-btn danger" onclick="event.stopPropagation()">禁用</button>
+        </div>
+      </div>
+    </div>
+    <div class="list-item" onclick="toggleItem(this)">
+      <div class="list-item-head">
+        <span class="list-item-chevron">&#9654;</span>
+        <div class="list-item-info">
+          <div class="list-item-title">code-review</div>
+          <div class="list-item-sub">自动代码审查，生成 PR review</div>
+        </div>
+        <span class="tag">72%</span>
+      </div>
+      <div class="list-item-body">
+        <div class="kv"><span class="kv-key">名称:</span><span class="kv-val"><code>code-review</code></span></div>
+        <div class="kv"><span class="kv-key">置信度:</span><span class="kv-val">72% (v1, 使用 3 次)</span></div>
+        <div class="actions">
+          <button class="action-btn" onclick="event.stopPropagation()">编辑</button>
+          <button class="action-btn danger" onclick="event.stopPropagation()">禁用</button>
+        </div>
+      </div>
+    </div>
+    <div class="list-item" onclick="toggleItem(this)">
+      <div class="list-item-head">
+        <span class="list-item-chevron">&#9654;</span>
+        <div class="list-item-info">
+          <div class="list-item-title">obsidian-note</div>
+          <div class="list-item-sub">读写 Obsidian 笔记库</div>
+        </div>
+        <span class="tag">65%</span>
+      </div>
+      <div class="list-item-body">
+        <div class="kv"><span class="kv-key">名称:</span><span class="kv-val"><code>obsidian-note</code></span></div>
+        <div class="kv"><span class="kv-key">置信度:</span><span class="kv-val">65% (v1, 使用 2 次)</span></div>
+        <div class="actions">
+          <button class="action-btn" onclick="event.stopPropagation()">编辑</button>
+          <button class="action-btn danger" onclick="event.stopPropagation()">禁用</button>
+        </div>
+      </div>
+    </div>
+    <div class="list-item" onclick="toggleItem(this)">
+      <div class="list-item-head">
+        <span class="list-item-chevron">&#9654;</span>
+        <div class="list-item-info">
+          <div class="list-item-title">send-email</div>
+          <div class="list-item-sub">Himalaya CLI 发送邮件</div>
+        </div>
+        <span class="tag warn">41%</span>
+      </div>
+      <div class="list-item-body">
+        <div class="kv"><span class="kv-key">名称:</span><span class="kv-val"><code>send-email</code></span></div>
+        <div class="kv"><span class="kv-key">置信度:</span><span class="kv-val">41% (v1, 使用 1 次)</span></div>
+        <div class="kv"><span class="kv-key">陷阱:</span><span class="kv-val">Himalaya CLI 配置路径因平台而异</span></div>
+        <div class="actions">
+          <button class="action-btn" onclick="event.stopPropagation()">编辑</button>
+          <button class="action-btn danger" onclick="event.stopPropagation()">禁用</button>
+        </div>
+      </div>
+    </div>
+    <div class="list-item" onclick="toggleItem(this)">
+      <div class="list-item-head">
+        <span class="list-item-chevron">&#9654;</span>
+        <div class="list-item-info">
+          <div class="list-item-title">minecraft-server</div>
+          <div class="list-item-sub">管理 MC 模组服务器</div>
+        </div>
+        <span class="tag warn">28%</span>
+      </div>
+      <div class="list-item-body">
+        <div class="kv"><span class="kv-key">名称:</span><span class="kv-val"><code>minecraft-server</code></span></div>
+        <div class="kv"><span class="kv-key">置信度:</span><span class="kv-val">28% (v1, 使用 0 次)</span></div>
+        <div class="actions">
+          <button class="action-btn" onclick="event.stopPropagation()">编辑</button>
+          <button class="action-btn danger" onclick="event.stopPropagation()">删除</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE 6: 设置 ==================== -->
+<div class="page" id="page-settings">
+  <div class="page-header">
+    <span class="page-title">&#9881; 设置</span>
+  </div>
+  <div class="page-list">
+    <div class="section-label">API 配置</div>
+    <div class="setting-item">
+      <span class="setting-label">API Key</span>
+      <input class="setting-input" value="sk-xxxx...xxxx" disabled>
+    </div>
+    <div class="setting-item">
+      <span class="setting-label">模型</span>
+      <input class="setting-input" value="deepseek-chat" disabled>
+    </div>
+    <div class="setting-item">
+      <span class="setting-label">Base URL</span>
+      <input class="setting-input" value="https://api.deepseek.com" disabled>
+    </div>
+
+    <div class="section-label">系统</div>
+    <div class="setting-item" style="cursor:pointer" onclick="this.querySelector('.tag').classList.toggle('green');this.querySelector('.tag').classList.toggle('red');this.querySelector('.tag').textContent=this.querySelector('.tag').textContent=='已开启'?'已关闭':'已开启'">
+      <span class="setting-label">进化引擎</span>
+      <span class="tag green" style="font-size:11px">已开启</span>
+    </div>
+    <div class="setting-item">
+      <span class="setting-label">配置文件</span>
+      <span class="setting-val">/data/data/.../config.json</span>
+    </div>
+
+    <div class="section-label">关于</div>
+    <div class="setting-item">
+      <span class="setting-label">数据库大小</span>
+      <span class="setting-val">45 KB</span>
+    </div>
+    <div class="setting-item">
+      <span class="setting-label">版本</span>
+      <span class="setting-val">v0.2.0-dev</span>
+    </div>
+    <div class="setting-item" style="justify-content:center; padding:20px">
+      <button class="action-btn danger" style="font-size:12px; padding:8px 24px">重置所有数据</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TAB BAR ==================== -->
+<div class="tabbar">
+  <button class="tab-btn active" onclick="switchPage('chat', this)">
+    <span class="tab-icon">&#128172;</span>
+    <span class="tab-label">聊天</span>
+  </button>
+  <button class="tab-btn" onclick="switchPage('history', this)">
+    <span class="tab-icon">&#9776;</span>
+    <span class="tab-label">历史</span>
+  </button>
+  <button class="tab-btn" onclick="switchPage('memory', this)">
+    <span class="tab-icon-wrap"><span class="tab-icon">&#9670;</span><span class="tab-badge">12</span></span>
+    <span class="tab-label">记忆</span>
+  </button>
+  <button class="tab-btn" onclick="switchPage('tools', this)">
+    <span class="tab-icon-wrap"><span class="tab-icon">&#9874;</span><span class="tab-badge">5</span></span>
+    <span class="tab-label">工具</span>
+  </button>
+  <button class="tab-btn" onclick="switchPage('skills', this)">
+    <span class="tab-icon-wrap"><span class="tab-icon">&#9733;</span><span class="tab-badge">7</span></span>
+    <span class="tab-label">技能</span>
+  </button>
+  <button class="tab-btn" onclick="switchPage('settings', this)">
+    <span class="tab-icon">&#9881;</span>
+    <span class="tab-label">设置</span>
+  </button>
+</div>
+
+<script>
+function switchPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function toggleItem(el) {
+  el.classList.toggle('expanded');
+}
+
+function filterList(input, listId) {
+  const q = input.value.toLowerCase();
+  document.querySelectorAll('#' + listId + ' .list-item').forEach(item => {
+    item.style.display = item.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+</script>
+
+</body>
+</html>

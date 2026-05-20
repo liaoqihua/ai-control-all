@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>AiControlAll — 导航设计原型</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    background: #0A0E17;
+    color: #e0e6f0;
+    max-width: 420px;
+    margin: 0 auto;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  /* Prototype note */
+  .proto-note {
+    background: #1a2332;
+    border-bottom: 1px solid #00D4FF33;
+    padding: 8px 16px;
+    font-size: 11px;
+    color: #00D4FF;
+    text-align: center;
+  }
+  .proto-note span { color: #06D6A0; }
+
+  /* ===== TOP BAR ===== */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: #0A0E17;
+    border-bottom: 1px solid #1a2332;
+  }
+  .app-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #00D4FF;
+    letter-spacing: 0.5px;
+  }
+  .app-title span { color: #06D6A0; }
+  .status-pill {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    background: #1a2332;
+    color: #06D6A0;
+    border: 1px solid #06D6A033;
+  }
+
+  /* ===== BOTTOM TAB BAR ===== */
+  .tabbar {
+    display: flex;
+    background: #0E1320;
+    border-top: 1px solid #1a2332;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 10px 0;
+    text-align: center;
+    font-size: 12px;
+    font-family: inherit;
+    color: #5a6a80;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .tab-btn .tab-icon { font-size: 18px; }
+  .tab-btn .tab-label { font-size: 10px; letter-spacing: 0.5px; text-transform: uppercase; }
+  .tab-btn.active { color: #00D4FF; }
+  .tab-btn.active::after {
+    content: '';
+    display: block;
+    width: 24px;
+    height: 2px;
+    background: #00D4FF;
+    margin-top: 2px;
+    border-radius: 1px;
+  }
+  .tab-badge {
+    position: absolute;
+    top: 2px;
+    right: -8px;
+    background: #06D6A0;
+    color: #0A0E17;
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 8px;
+    font-weight: 700;
+  }
+  .tab-icon-wrap { position: relative; display: inline-block; }
+
+  /* ===== MAIN CONTENT ===== */
+  .main {
+    flex: 1;
+    overflow-y: auto;
+    background: #0A0E17;
+  }
+
+  /* Chat area */
+  .chat-msg {
+    padding: 12px 16px;
+    margin: 4px 0;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .chat-msg.user { color: #00D4FF; }
+  .chat-msg.agent { color: #c0c8d4; background: #0E1320; border-left: 2px solid #1a2332; }
+  .chat-msg .role { font-size: 10px; color: #5a6a80; margin-bottom: 4px; }
+
+  /* ===== DETAIL PAGES ===== */
+  .detail-page { display: none; flex-direction: column; height: 100%; }
+  .detail-page.active { display: flex; }
+
+  .detail-header {
+    padding: 16px;
+    border-bottom: 1px solid #1a2332;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .detail-back {
+    font-size: 20px;
+    color: #5a6a80;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    padding: 4px 8px;
+  }
+  .detail-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #00D4FF;
+  }
+  .detail-count {
+    font-size: 11px;
+    color: #5a6a80;
+    margin-left: auto;
+  }
+
+  .detail-search {
+    margin: 12px 16px;
+    padding: 10px 14px;
+    background: #1a2332;
+    border: 1px solid #1a2332;
+    border-radius: 8px;
+    color: #e0e6f0;
+    font-family: inherit;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .detail-search:focus { border-color: #00D4FF; }
+  .detail-search::placeholder { color: #5a6a80; }
+
+  .detail-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 16px;
+  }
+  .detail-item {
+    padding: 14px 0;
+    border-bottom: 1px solid #1a233244;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .detail-item:hover { background: #0E1320; padding-left: 4px; }
+  .detail-item .item-title {
+    font-size: 14px;
+    color: #e0e6f0;
+    font-weight: 500;
+  }
+  .detail-item .item-meta {
+    font-size: 11px;
+    color: #5a6a80;
+    display: flex;
+    gap: 12px;
+  }
+  .detail-item .item-tag {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: #1a2332;
+    color: #00D4FF;
+    display: inline-block;
+    align-self: flex-start;
+  }
+  .detail-item .item-tag.green { color: #06D6A0; background: #1a2332; }
+  .detail-item .item-tag.warn { color: #f0a030; background: #1a2332; }
+
+  /* Empty state */
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #5a6a80;
+    font-size: 13px;
+    gap: 8px;
+  }
+  .empty-state .empty-icon { font-size: 36px; opacity: 0.5; }
+
+  /* FAB */
+  .fab {
+    position: absolute;
+    bottom: 80px;
+    right: 16px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #00D4FF;
+    color: #0A0E17;
+    font-size: 24px;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 16px #00D4FF33;
+  }
+
+  /* Layout container */
+  .screen {
+    flex: 1;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+</style>
+</head>
+<body>
+
+<div class="proto-note">&#9678; <span>PROTOTYPE</span> &mdash; AiControlAll 导航设计预览 &mdash; 点击底部标签切换详情页</div>
+
+<!-- ===== SCREEN: Main Chat ===== -->
+<div class="screen" id="chatScreen">
+  <div class="topbar">
+    <div class="app-title">Ai<span>Control</span>All</div>
+    <div class="status-pill">&#9679; M:12 S:7 T:5</div>
+  </div>
+  <div class="main" id="chatMain">
+    <div class="chat-msg user">
+      <div class="role">YOU &middot; 14:23</div>
+      帮我查一下今天的天气
+    </div>
+    <div class="chat-msg agent">
+      <div class="role">AGENT &middot; 14:23</div>
+      已调用 WeatherTool 查询北京天气：晴，22°C，湿度 45%。需要更多信息吗？
+    </div>
+    <div class="chat-msg user">
+      <div class="role">YOU &middot; 14:24</div>
+      打开客厅的灯
+    </div>
+    <div class="chat-msg agent">
+      <div class="role">AGENT &middot; 14:24</div>
+      &#10003; 已通过 SmartHomeTool 打开客厅灯光。当前亮度 70%。
+    </div>
+  </div>
+  <div class="tabbar">
+    <button class="tab-btn" onclick="showDetail('settings')">
+      <span class="tab-icon">&#9881;</span>
+      <span class="tab-label">设置</span>
+    </button>
+    <button class="tab-btn" onclick="showDetail('memory')">
+      <span class="tab-icon-wrap"><span class="tab-icon">&#9670;</span><span class="tab-badge">12</span></span>
+      <span class="tab-label">记忆</span>
+    </button>
+    <button class="tab-btn" onclick="showDetail('tools')">
+      <span class="tab-icon-wrap"><span class="tab-icon">&#9874;</span><span class="tab-badge">5</span></span>
+      <span class="tab-label">工具</span>
+    </button>
+    <button class="tab-btn" onclick="showDetail('skills')">
+      <span class="tab-icon-wrap"><span class="tab-icon">&#9733;</span><span class="tab-badge">7</span></span>
+      <span class="tab-label">技能</span>
+    </button>
+  </div>
+</div>
+
+<!-- ===== DETAIL: Settings ===== -->
+<div class="detail-page" id="detail-settings">
+  <div class="detail-header">
+    <button class="detail-back" onclick="showChat()">&#8592;</button>
+    <span class="detail-title">&#9881; 设置</span>
+  </div>
+  <div class="detail-list">
+    <div class="detail-item" style="border-bottom: 1px solid #1a233266; padding-bottom: 20px;">
+      <div class="item-title">API Key</div>
+      <div class="item-meta">sk-xxxx...xxxx &middot; DeepSeek</div>
+    </div>
+    <div class="detail-item">
+      <div class="item-title">模型</div>
+      <div class="item-meta">deepseek-chat</div>
+    </div>
+    <div class="detail-item">
+      <div class="item-title">Base URL</div>
+      <div class="item-meta">https://api.deepseek.com/v1</div>
+    </div>
+    <div class="detail-item">
+      <div class="item-title">进化引擎</div>
+      <div class="item-meta"><span class="item-tag green">&#10003; 已开启</span></div>
+    </div>
+    <div class="detail-item">
+      <div class="item-title">配置文件路径</div>
+      <div class="item-meta">/data/data/.../files/config.json</div>
+    </div>
+    <div class="detail-item">
+      <div class="item-title">数据库</div>
+      <div class="item-meta">aicontrolall.db &middot; 45 KB</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DETAIL: Memory ===== -->
+<div class="detail-page" id="detail-memory">
+  <div class="detail-header">
+    <button class="detail-back" onclick="showChat()">&#8592;</button>
+    <span class="detail-title">&#9670; 记忆</span>
+    <span class="detail-count">12 条</span>
+  </div>
+  <input class="detail-search" placeholder="搜索记忆..." oninput="filterList(this, 'memoryList')">
+  <div class="detail-list" id="memoryList">
+    <div class="detail-item">
+      <div class="item-title">用户偏好深色科技风 UI 配色</div>
+      <div class="item-meta"><span class="item-tag">user</span> 使用 3 次 &middot; 2 天前</div>
+    </div>
+    <div class="detail-item">
+      <div class="item-title">测试设备: 小米 1ee77cd6, MIUI, 无FTS5</div>
+      <div class="item-meta"><span class="item-tag">memory</span> 使用 5 次 &middot; 3 天前</div>
+    </div>
+    <div class="detail-item">
+      <div class="item-title">DeepSeek tool call id 字段须原样回传</div>
+      <div class="item-meta"><span class="item-tag">memory</span> 使用 8 次 &middot; 5 天前</div>
+    </div>
+    <div class="detail-item">
+      <div class="item-title">配置文件使用 JSON 格式存储</div>
+      <div class="item-meta"><span class="item-tag">user</span> 使用 2 次 &middot; 6 天前</div>
+    </div>
+    <div class="detail-item">
+      <div class="item-title">远程服务器 sunri@10.6.221.181:10022</div>
+      <div class="item-meta"><span class="item-tag">memory</span> 使用 1 次 &middot; 7 天前</div>
+    </div>
+    <div class="detail-item">
+      <div class="item-title">用户编辑器为 Qoder (VS Code 衍生)</div>
+      <div class="item-meta"><span class="item-tag">memory</span> 使用 3 次 &middot; 8 天前</div>
+    </div>
+    <div class="detail-item">
+      <div class="item-title">淘宝爬虫: 椰子接码 keyword=验证码 不编码URL</div>
+      <div class="item-meta"><span class="item-tag">memory</span> 使用 4 次 &middot; 10 天前</div>
+    </div>
+    <div class="detail-item">
+      <div class="item-title">巨量代理仅数据中心 IP 被淘宝屏蔽</div>
+      <div class="item-meta"><span class="item-tag">memory</span> 使用 2 次 &middot; 12 天前</div>
+    </div>
+    <div class="detail-item">
+      <div class="item-title">用户偏好 JSON 存储, 非 SharedPreferences</div>
+      <div class="item-meta"><span class="item-tag">user</span> 使用 1 次 &middot; 14 天前</div>
+    </div>
+    <div class="detail-item" style="opacity:0.35">
+      <div class="item-title">… 还有 3 条更早的记忆</div>
+      <div class="item-meta">向上滚动加载更多</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DETAIL: Tools ===== -->
+<div class="detail-page" id="detail-tools">
+  <div class="detail-header">
+    <button class="detail-back" onclick="showChat()">&#8592;</button>
+    <span class="detail-title">&#9874; 工具</span>
+    <span class="detail-count">5 个</span>
+  </div>
+  <input class="detail-search" placeholder="搜索工具..." oninput="filterList(this, 'toolList')">
+  <div class="detail-list" id="toolList">
+    <div class="detail-item">
+      <div class="item-title">&#128247; CameraTool</div>
+      <div class="item-meta">拍照 / 扫码 &middot; <span class="item-tag green">已注册</span></div>
+    </div>
+    <div class="detail-item">
+      <div class="item-title">&#128266; SpeechTool</div>
+      <div class="item-meta">TTS 语音合成 &middot; <span class="item-tag green">已注册</span></div>
+    </div>
+    <div class="detail-item">
+      <div class="item-title">&#128269; SearchMemoriesTool</div>
+      <div class="item-meta">FTS5 全文搜索记忆 &middot; <span class="item-tag green">已注册</span></div>
+    </div>
+    <div class="detail-item">
+      <div class="item-title">&#127760; WebSearchTool <span class="item-tag warn" style="margin-left:8px">计划中</span></div>
+      <div class="item-meta">DuckDuckGo 网页搜索 &middot; <span class="item-tag">未实现</span></div>
+    </div>
+    <div class="detail-item">
+      <div class="item-title">&#127968; SmartHomeTool <span class="item-tag warn" style="margin-left:8px">计划中</span></div>
+      <div class="item-meta">Matter / Home Assistant 网关 &middot; <span class="item-tag">未实现</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DETAIL: Skills ===== -->
+<div class="detail-page" id="detail-skills">
+  <div class="detail-header">
+    <button class="detail-back" onclick="showChat()">&#8592;</button>
+    <span class="detail-title">&#9733; 技能</span>
+    <span class="detail-count">7 个</span>
+  </div>
+  <input class="detail-search" placeholder="搜索技能..." oninput="filterList(this, 'skillList')">
+  <div class="detail-list" id="skillList">
+    <div class="detail-item">
+      <div class="item-title">adjust-smart-light</div>
+      <div class="item-meta">调整智能灯光亮度和色温</div>
+      <span class="item-tag green">置信度 92%</span>
+    </div>
+    <div class="detail-item">
+      <div class="item-title">taobao-sms-login</div>
+      <div class="item-meta">Playwright + 椰子接码平台完成淘宝短信登录</div>
+      <span class="item-tag green">置信度 88%</span>
+    </div>
+    <div class="detail-item">
+      <div class="item-title">get-weather</div>
+      <div class="item-meta">通过 Open-Meteo API 获取实时天气</div>
+      <span class="item-tag green">置信度 95%</span>
+    </div>
+    <div class="detail-item">
+      <div class="item-title">obsidian-note</div>
+      <div class="item-meta">读写 Obsidian 笔记库中的笔记</div>
+      <span class="item-tag">置信度 65%</span>
+    </div>
+    <div class="detail-item">
+      <div class="item-title">code-review</div>
+      <div class="item-meta">自动代码审查，生成 GitHub PR review</div>
+      <span class="item-tag">置信度 72%</span>
+    </div>
+    <div class="detail-item">
+      <div class="item-title">send-email</div>
+      <div class="item-meta">通过 Himalaya CLI 发送邮件</div>
+      <span class="item-tag warn">置信度 41%</span>
+    </div>
+    <div class="detail-item">
+      <div class="item-title">minecraft-server</div>
+      <div class="item-meta">管理 Minecraft 模组服务器启停</div>
+      <span class="item-tag warn">置信度 28%</span>
+    </div>
+  </div>
+</div>
+
+<script>
+function showDetail(page) {
+  document.querySelectorAll('.detail-page').forEach(p => p.classList.remove('active'));
+  document.getElementById('detail-' + page).classList.add('active');
+  document.getElementById('chatScreen').style.display = 'none';
+}
+function showChat() {
+  document.querySelectorAll('.detail-page').forEach(p => p.classList.remove('active'));
+  document.getElementById('chatScreen').style.display = 'flex';
+}
+function filterList(input, listId) {
+  const q = input.value.toLowerCase();
+  document.querySelectorAll('#' + listId + ' .detail-item').forEach(item => {
+    item.style.display = item.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+</script>
+
+</body>
+</html>
