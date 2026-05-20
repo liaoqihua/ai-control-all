@@ -174,6 +174,11 @@ class MainActivity : AppCompatActivity() {
         tvStatusPill.text = "● M:$mem S:$sk T:$tools D:$drills"
     }
 
+    fun navigateBack() {
+        // Pop back to the default page fragment
+        supportFragmentManager.popBackStack()
+    }
+
     override fun onBackPressed() {
         if (drawerLayout.isDrawerOpen(menuDrawer)) {
             drawerLayout.closeDrawer(menuDrawer)
