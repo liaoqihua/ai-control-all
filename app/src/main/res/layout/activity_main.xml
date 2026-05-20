@@ -1,258 +1,58 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.drawerlayout.widget.DrawerLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/drawerLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bg_primary">
 
-    <!-- Main content -->
+    <!-- Main area: topbar + content frame -->
     <LinearLayout
-        android:id="@+id/mainContent"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <!-- Header -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:background="@color/bg_secondary"
-            android:paddingHorizontal="16dp">
+        <include layout="@layout/topbar" />
 
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="AiControlAll"
-                android:textSize="18sp"
-                android:textColor="@color/accent_cyan"
-                android:textStyle="bold"
-                android:letterSpacing="0.05" />
-
-            <TextView
-                android:id="@+id/tvStatus"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="M:0 S:0 T:0"
-                android:textSize="11sp"
-                android:textColor="@color/text_muted"
-                android:fontFamily="monospace"
-                android:layout_marginEnd="10dp" />
-
-            <TextView
-                android:id="@+id/btnMenu"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:text="☰"
-                android:textSize="20sp"
-                android:textColor="@color/text_secondary"
-                android:gravity="center"
-                android:background="@drawable/menu_btn_bg"
-                android:clickable="true"
-                android:focusable="true" />
-        </LinearLayout>
-
-        <!-- Chat area -->
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvChat"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:clipToPadding="false"
-            android:padding="10dp"
-            android:focusable="true"
-            android:focusableInTouchMode="true" />
-
-        <!-- Input bar -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:background="@color/bg_secondary"
-            android:padding="10dp"
-            android:gravity="center_vertical">
-
-            <EditText
-                android:id="@+id/etInput"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:hint="消息..."
-                android:textColorHint="@color/text_muted"
-                android:maxLines="4"
-                android:background="@drawable/edittext_bg"
-                android:padding="12dp"
-                android:textSize="15sp"
-                android:textColor="@color/text_primary" />
-
-            <ImageButton
-                android:id="@+id/btnSend"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
-                android:layout_marginStart="8dp"
-                android:src="@android:drawable/ic_menu_send"
-                android:background="@drawable/btn_send_bg"
-                android:scaleType="centerInside" />
-        </LinearLayout>
-    </LinearLayout>
-
-    <!-- Slide-in status panel from right -->
-    <LinearLayout
-        android:id="@+id/statusPanel"
-        android:layout_width="300dp"
-        android:layout_height="match_parent"
-        android:layout_gravity="end"
-        android:orientation="vertical"
-        android:background="@color/bg_secondary"
-        android:elevation="16dp"
-        android:translationX="300dp"
-        android:padding="16dp"
-        android:visibility="visible">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="SYSTEM STATUS"
-                android:textSize="14sp"
-                android:textColor="@color/accent_cyan"
-                android:textStyle="bold"
-                android:fontFamily="monospace"
-                android:letterSpacing="0.1" />
-
-            <TextView
-                android:id="@+id/btnClosePanel"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:text="✕"
-                android:textSize="18sp"
-                android:textColor="@color/text_muted"
-                android:gravity="center"
-                android:clickable="true"
-                android:focusable="true" />
-        </LinearLayout>
-
-        <ScrollView
+        <FrameLayout
+            android:id="@+id/contentFrame"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <!-- Core stats -->
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="CORE"
-                    android:textSize="10sp"
-                    android:textColor="@color/text_muted"
-                    android:fontFamily="monospace"
-                    android:letterSpacing="0.15"
-                    android:paddingBottom="8dp" />
-
-                <TextView
-                    android:id="@+id/tvPanelStats"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:textSize="13sp"
-                    android:textColor="@color/text_primary"
-                    android:fontFamily="monospace"
-                    android:lineSpacingExtra="4dp"
-                    android:paddingBottom="16dp" />
-
-                <!-- Recent memories -->
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="RECENT MEMORIES"
-                    android:textSize="10sp"
-                    android:textColor="@color/text_muted"
-                    android:fontFamily="monospace"
-                    android:letterSpacing="0.15"
-                    android:paddingBottom="8dp" />
-
-                <TextView
-                    android:id="@+id/tvPanelMemories"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:textSize="12sp"
-                    android:textColor="@color/text_secondary"
-                    android:fontFamily="monospace"
-                    android:lineSpacingExtra="3dp"
-                    android:paddingBottom="16dp" />
-
-                <!-- Available tools -->
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="TOOLS"
-                    android:textSize="10sp"
-                    android:textColor="@color/text_muted"
-                    android:fontFamily="monospace"
-                    android:letterSpacing="0.15"
-                    android:paddingBottom="8dp" />
-
-                <TextView
-                    android:id="@+id/tvPanelTools"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:textSize="12sp"
-                    android:textColor="@color/text_secondary"
-                    android:fontFamily="monospace"
-                    android:lineSpacingExtra="3dp"
-                    android:paddingBottom="16dp" />
-
-                <!-- Active skills -->
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="SKILLS"
-                    android:textSize="10sp"
-                    android:textColor="@color/text_muted"
-                    android:fontFamily="monospace"
-                    android:letterSpacing="0.15"
-                    android:paddingBottom="8dp" />
-
-                <TextView
-                    android:id="@+id/tvPanelSkills"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:textSize="12sp"
-                    android:textColor="@color/text_secondary"
-                    android:fontFamily="monospace"
-                    android:lineSpacingExtra="3dp"
-                    android:paddingBottom="16dp" />
-
-                <!-- Config file path -->
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="CONFIG"
-                    android:textSize="10sp"
-                    android:textColor="@color/text_muted"
-                    android:fontFamily="monospace"
-                    android:letterSpacing="0.15"
-                    android:paddingBottom="8dp" />
-
-                <TextView
-                    android:id="@+id/tvPanelConfig"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:textSize="11sp"
-                    android:textColor="@color/text_muted"
-                    android:fontFamily="monospace"
-                    android:lineSpacingExtra="3dp" />
-            </LinearLayout>
-        </ScrollView>
+            <include layout="@layout/content_main" />
+        </FrameLayout>
     </LinearLayout>
 
-</FrameLayout>
+    <!-- Right-side menu drawer -->
+    <LinearLayout
+        android:id="@+id/menuDrawer"
+        android:layout_width="280dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="end"
+        android:orientation="vertical"
+        android:background="@color/bg_primary">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="16dp"
+            android:text="☰ 导航"
+            android:textSize="16sp"
+            android:textColor="@color/accent_cyan"
+            android:textStyle="bold"
+            android:fontFamily="monospace" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#1a2332" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvMenu"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingVertical="8dp" />
+    </LinearLayout>
+
+</androidx.drawerlayout.widget.DrawerLayout>

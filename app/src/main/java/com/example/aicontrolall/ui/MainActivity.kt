@@ -3,13 +3,11 @@ package com.example.aicontrolall.ui
 import android.content.Intent
 import android.os.Bundle
 import android.view.MotionEvent
-import android.view.View
-import android.view.animation.AccelerateDecelerateInterpolator
-import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -44,20 +42,11 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var etInput: EditText
     private lateinit var btnSend: ImageButton
-    private lateinit var btnMenu: TextView
-    private lateinit var btnClosePanel: TextView
-    private lateinit var tvStatus: TextView
+    private lateinit var btnHamburger: TextView
+    private lateinit var tvStatusPill: TextView
     private lateinit var rvChat: RecyclerView
-    private lateinit var statusPanel: View
-
-    // Panel detail views
-    private lateinit var tvPanelStats: TextView
-    private lateinit var tvPanelMemories: TextView
-    private lateinit var tvPanelTools: TextView
-    private lateinit var tvPanelSkills: TextView
-    private lateinit var tvPanelConfig: TextView
-
-    private var panelOpen = false
+    private lateinit var drawerLayout: DrawerLayout
+    private lateinit var menuDrawer: android.view.View
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,18 +54,11 @@ class MainActivity : AppCompatActivity() {
 
         etInput = findViewById(R.id.etInput)
         btnSend = findViewById(R.id.btnSend)
-        btnMenu = findViewById(R.id.btnMenu)
-        btnClosePanel = findViewById(R.id.btnClosePanel)
-        tvStatus = findViewById(R.id.tvStatus)
+        btnHamburger = findViewById(R.id.btnHamburger)
+        tvStatusPill = findViewById(R.id.tvStatusPill)
         rvChat = findViewById(R.id.rvChat)
-        statusPanel = findViewById(R.id.statusPanel)
-
-        // Panel detail views
-        tvPanelStats = findViewById(R.id.tvPanelStats)
-        tvPanelMemories = findViewById(R.id.tvPanelMemories)
-        tvPanelTools = findViewById(R.id.tvPanelTools)
-        tvPanelSkills = findViewById(R.id.tvPanelSkills)
-        tvPanelConfig = findViewById(R.id.tvPanelConfig)
+        drawerLayout = findViewById(R.id.drawerLayout)
+        menuDrawer = findViewById(R.id.menuDrawer)
 
         chatAdapter = ChatAdapter()
         rvChat.layoutManager = LinearLayoutManager(this)
@@ -100,76 +82,20 @@ class MainActivity : AppCompatActivity() {
             } else false
         }
 
-        // Hamburger menu → slide panel
-        btnMenu.setOnClickListener {
-            if (panelOpen) closePanel() else openPanel()
+        // Hamburger toggles the menu drawer
+        btnHamburger.setOnClickListener {
+            if (drawerLayout.isDrawerOpen(menuDrawer)) {
+                drawerLayout.closeDrawer(menuDrawer)
+            } else {
+                drawerLayout.openDrawer(menuDrawer)
+            }
         }
 
-        btnClosePanel.setOnClickListener { closePanel() }
-
         // Long-press hamburger → settings
-        btnMenu.setOnLongClickListener {
+        btnHamburger.setOnLongClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
             true
         }
-    }
-
-    private fun openPanel() {
-        refreshPanelData()
-        statusPanel.animate()
-            .translationX(0f)
-            .setDuration(250)
-            .setInterpolator(AccelerateDecelerateInterpolator())
-            .start()
-        panelOpen = true
-    }
-
-    private fun closePanel() {
-        statusPanel.animate()
-            .translationX(statusPanel.width.toFloat())
-            .setDuration(200)
-            .setInterpolator(AccelerateDecelerateInterpolator())
-            .start()
-        panelOpen = false
-    }
-
-    private fun refreshPanelData() {
-        // Core stats
-        val status = agentCore.getStatus()
-        val mem = Regex("Memories: (\\d+)").find(status)?.groupValues?.get(1) ?: "0"
-        val sk = Regex("Skills: (\\d+)").find(status)?.groupValues?.get(1) ?: "0"
-        val tools = Regex("Tools: (\\d+)").find(status)?.groupValues?.get(1) ?: "0"
-        val model = Regex("Model: (.+)").find(status)?.groupValues?.get(1) ?: configMgr.model
-        val evo = Regex("Evolution: (.+)").find(status)?.groupValues?.get(1) ?: "enabled"
-
-        tvPanelStats.text = """
-            Memories       $mem
-            Skills         $sk
-            Tools          $tools
-            Model          $model
-            Evolution      $evo
-        """.trimIndent()
-
-        // Recent memories
-        val memories = memoryStore.getRecent(5)
-        tvPanelMemories.text = if (memories.isEmpty()) "(none)" else {
-            memories.joinToString("\n") { "• ${it.content.take(60)}" }
-        }
-
-        // Available tools
-        val toolList = mcpGateway.listTools()
-        tvPanelTools.text = if (toolList.isEmpty()) "(none)" else {
-            toolList.joinToString("\n") { "▸ ${it.name}" }
-        }
-
-        // Active skills
-        val skills = skillStore.getAll(10)
-        tvPanelSkills.text = if (skills.isEmpty()) "(none)" else {
-            skills.joinToString("\n") { "▸ ${it.title} (${(it.confidence * 100).toInt()}%)" }
-        }
-
-        // Config
-        tvPanelConfig.text = "Path: ${configMgr.getConfigFilePath()}"
     }
 
     private fun sendMessage() {
@@ -230,7 +156,6 @@ class MainActivity : AppCompatActivity() {
 
                 rvChat.scrollToPosition(chatAdapter.itemCount - 1)
                 updateStatusBar()
-                if (panelOpen) refreshPanelData()
             } catch (e: Exception) {
                 chatAdapter.addMessage(ChatMessage(
                     text = "⚠ ${e.message}",
@@ -245,12 +170,13 @@ class MainActivity : AppCompatActivity() {
         val mem = Regex("Memories: (\\d+)").find(status)?.groupValues?.get(1) ?: "0"
         val sk = Regex("Skills: (\\d+)").find(status)?.groupValues?.get(1) ?: "0"
         val tools = Regex("Tools: (\\d+)").find(status)?.groupValues?.get(1) ?: "0"
-        tvStatus.text = "M:$mem S:$sk T:$tools"
+        val drills = Regex("Drills: (\\d+)").find(status)?.groupValues?.get(1) ?: "0"
+        tvStatusPill.text = "● M:$mem S:$sk T:$tools D:$drills"
     }
 
     override fun onBackPressed() {
-        if (panelOpen) {
-            closePanel()
+        if (drawerLayout.isDrawerOpen(menuDrawer)) {
+            drawerLayout.closeDrawer(menuDrawer)
         } else {
             super.onBackPressed()
         }

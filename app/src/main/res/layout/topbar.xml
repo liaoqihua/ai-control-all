@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/topbar"
+    android:layout_width="match_parent"
+    android:layout_height="56dp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:background="@color/bg_primary"
+    android:paddingHorizontal="16dp">
+
+    <TextView
+        android:id="@+id/tvAppTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="AiControlAll"
+        android:textSize="18sp"
+        android:textColor="@color/accent_cyan"
+        android:textStyle="bold"
+        android:letterSpacing="0.05"
+        android:fontFamily="monospace" />
+
+    <TextView
+        android:id="@+id/tvStatusPill"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="8dp"
+        android:paddingVertical="3dp"
+        android:text="● M:0 S:0 T:0 D:0"
+        android:textSize="10sp"
+        android:textColor="@color/accent_green"
+        android:background="@drawable/menu_btn_bg"
+        android:fontFamily="monospace"
+        android:layout_marginEnd="10dp" />
+
+    <TextView
+        android:id="@+id/btnHamburger"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:text="☰"
+        android:textSize="20sp"
+        android:textColor="@color/text_secondary"
+        android:gravity="center"
+        android:background="@drawable/menu_btn_bg"
+        android:clickable="true"
+        android:focusable="true" />
+</LinearLayout>
