@@ -1,14 +1,11 @@
 package com.example.aicontrolall.ui
 
-import android.content.Intent
 import android.os.Bundle
-import android.view.MotionEvent
-import android.widget.EditText
-import android.widget.ImageButton
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
-import androidx.lifecycle.lifecycleScope
+import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.aicontrolall.R
@@ -26,7 +23,6 @@ import com.example.aicontrolall.memory.MemoryStore
 import com.example.aicontrolall.memory.SessionStore
 import com.example.aicontrolall.memory.SkillStore
 import com.example.aicontrolall.util.ConfigManager
-import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
 
@@ -37,75 +33,58 @@ class MainActivity : AppCompatActivity() {
     private lateinit var mcpGateway: McpGateway
     private lateinit var configMgr: ConfigManager
     private lateinit var speechTool: SpeechTool
-    private lateinit var chatAdapter: ChatAdapter
     private var sessionId: String = ""
 
-    private lateinit var etInput: EditText
-    private lateinit var btnSend: ImageButton
+    private lateinit var drawerLayout: DrawerLayout
+    private lateinit var rvMenu: RecyclerView
     private lateinit var btnHamburger: TextView
     private lateinit var tvStatusPill: TextView
-    private lateinit var rvChat: RecyclerView
-    private lateinit var drawerLayout: DrawerLayout
-    private lateinit var menuDrawer: android.view.View
+    private lateinit var menuAdapter: MenuAdapter
+
+    private val menuItems = listOf(
+        MenuItem("chat", "\uD83D\uDCAC", "聊天"),
+        MenuItem("history", "\uD83D\uDD51", "历史会话"),
+        MenuItem("memory", "\u25C6", "记忆"),
+        MenuItem("tools", "\u2692", "工具"),
+        MenuItem("skills", "\u2605", "技能"),
+        MenuItem("divider", "", "", isDivider = true),
+        MenuItem("devices", "\uD83D\uDD27", "设备"),
+        MenuItem("settings", "\u2699", "设置")
+    )
+
+    private val fragments = mutableMapOf<String, Fragment>()
+    private var currentPage = "default"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        etInput = findViewById(R.id.etInput)
-        btnSend = findViewById(R.id.btnSend)
         btnHamburger = findViewById(R.id.btnHamburger)
         tvStatusPill = findViewById(R.id.tvStatusPill)
-        rvChat = findViewById(R.id.rvChat)
         drawerLayout = findViewById(R.id.drawerLayout)
-        menuDrawer = findViewById(R.id.menuDrawer)
+        rvMenu = findViewById(R.id.rvMenu)
 
-        chatAdapter = ChatAdapter()
-        rvChat.layoutManager = LinearLayoutManager(this)
-        rvChat.adapter = chatAdapter
+        // Setup menu
+        menuAdapter = MenuAdapter(menuItems.filter { !it.isDivider }) { item ->
+            showPage(item.id)
+            drawerLayout.closeDrawer(GravityCompat.END)
+        }
+        rvMenu.layoutManager = LinearLayoutManager(this)
+        rvMenu.adapter = menuAdapter
 
-        rvChat.setOnTouchListener { _, event ->
-            if (event.action == MotionEvent.ACTION_DOWN) {
-                currentFocus?.clearFocus()
-                rvChat.clearFocus()
-            }
-            false
+        // Hamburger toggles drawer
+        btnHamburger.setOnClickListener {
+            if (drawerLayout.isDrawerOpen(GravityCompat.END))
+                drawerLayout.closeDrawer(GravityCompat.END)
+            else
+                drawerLayout.openDrawer(GravityCompat.END)
         }
 
+        // Initialize agent
         initializeAgent()
 
-        btnSend.setOnClickListener { sendMessage() }
-        etInput.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEND) {
-                sendMessage()
-                true
-            } else false
-        }
-
-        // Hamburger toggles the menu drawer
-        btnHamburger.setOnClickListener {
-            if (drawerLayout.isDrawerOpen(menuDrawer)) {
-                drawerLayout.closeDrawer(menuDrawer)
-            } else {
-                drawerLayout.openDrawer(menuDrawer)
-            }
-        }
-
-        // Long-press hamburger → settings
-        btnHamburger.setOnLongClickListener {
-            startActivity(Intent(this, SettingsActivity::class.java))
-            true
-        }
-    }
-
-    private fun sendMessage() {
-        val input = etInput.text.toString().trim()
-        if (input.isBlank()) return
-
-        etInput.text.clear()
-        chatAdapter.addMessage(ChatMessage(text = input, isUser = true))
-        rvChat.scrollToPosition(chatAdapter.itemCount - 1)
-        processUserInput(input)
+        // Show default page
+        showPage("default")
     }
 
     private fun initializeAgent() {
@@ -138,50 +117,64 @@ class MainActivity : AppCompatActivity() {
         )
 
         sessionId = sessionStore.createSession()
-        updateStatusBar()
+        updateStatusPill()
     }
 
-    private fun processUserInput(input: String) {
-        lifecycleScope.launch {
-            try {
-                val result = agentCore.processInput(input, sessionId)
-                chatAdapter.addMessage(ChatMessage(text = result.reply, isUser = false))
-
-                if (result.toolResults.isNotEmpty()) {
-                    val toolsSummary = result.toolResults.joinToString("\n") {
-                        "${if (it.success) "✓" else "✗"} ${it.toolName}"
-                    }
-                    chatAdapter.addMessage(ChatMessage(text = "🔧 $toolsSummary", isUser = false))
+    fun showPage(pageId: String) {
+        currentPage = pageId
+        val fragment = fragments.getOrPut(pageId) {
+            when (pageId) {
+                "default" -> DefaultPageFragment()
+                "chat" -> ChatFragment().also {
+                    it.setAgentCore(agentCore, sessionId)
                 }
-
-                rvChat.scrollToPosition(chatAdapter.itemCount - 1)
-                updateStatusBar()
-            } catch (e: Exception) {
-                chatAdapter.addMessage(ChatMessage(
-                    text = "⚠ ${e.message}",
-                    isUser = false
-                ))
+                "history" -> HistoryFragment().also {
+                    it.setSessionStore(sessionStore)
+                }
+                "memory" -> MemoryFragment().also {
+                    it.setMemoryStore(memoryStore)
+                }
+                "tools" -> ToolsFragment().also {
+                    it.setMcpGateway(mcpGateway)
+                }
+                "skills" -> SkillsFragment().also {
+                    it.setSkillStore(skillStore)
+                }
+                "devices" -> DevicesFragment()
+                "settings" -> SettingsFragment().also {
+                    it.setConfigManager(configMgr)
+                }
+                else -> DefaultPageFragment()
             }
         }
-    }
 
-    private fun updateStatusBar() {
-        val status = agentCore.getStatus()
-        val mem = Regex("Memories: (\\d+)").find(status)?.groupValues?.get(1) ?: "0"
-        val sk = Regex("Skills: (\\d+)").find(status)?.groupValues?.get(1) ?: "0"
-        val tools = Regex("Tools: (\\d+)").find(status)?.groupValues?.get(1) ?: "0"
-        val drills = Regex("Drills: (\\d+)").find(status)?.groupValues?.get(1) ?: "0"
-        tvStatusPill.text = "● M:$mem S:$sk T:$tools D:$drills"
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.contentFrame, fragment)
+            .addToBackStack(null)
+            .commit()
+
+        updateStatusPill()
     }
 
     fun navigateBack() {
-        // Pop back to the default page fragment
-        supportFragmentManager.popBackStack()
+        if (currentPage != "default") {
+            showPage("default")
+        }
+    }
+
+    fun updateStatusPill() {
+        val m = memoryStore.count()
+        val s = skillStore.getAll(100).size
+        val t = mcpGateway.listTools().size
+        val d = 8
+        tvStatusPill.text = "\u25CF M:$m S:$s T:$t D:$d"
     }
 
     override fun onBackPressed() {
-        if (drawerLayout.isDrawerOpen(menuDrawer)) {
-            drawerLayout.closeDrawer(menuDrawer)
+        if (drawerLayout.isDrawerOpen(GravityCompat.END)) {
+            drawerLayout.closeDrawer(GravityCompat.END)
+        } else if (currentPage != "default") {
+            showPage("default")
         } else {
             super.onBackPressed()
         }
