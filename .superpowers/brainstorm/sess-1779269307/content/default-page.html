@@ -117,7 +117,6 @@
     border: 1.5px solid #00D4FF22;
     border-radius: 50%;
     z-index: 0;
-    animation: rotateRing 20s linear infinite;
   }
   .star-ring::before {
     content: '';
@@ -134,31 +133,46 @@
     border-radius: 50%;
     border: 0.5px dashed #00D4FF11;
   }
-  @keyframes rotateRing {
-    from { transform: translate(-50%, -50%) rotate(0deg) rotateX(70deg); }
-    to { transform: translate(-50%, -50%) rotate(360deg) rotateX(70deg); }
-  }
 
-  /* Musical notes on ring */
-  .note {
+  /* Ring system: rotates the note container */
+  .ring-system {
     position: absolute;
-    color: #00D4FF;
-    font-size: 18px;
-    z-index: 0;
-    animation: noteFloat var(--dur) ease-in-out infinite;
-    animation-delay: var(--delay);
-    text-shadow: 0 0 8px #00D4FF44;
+    top: 50%; left: 50%;
+    width: 280px; height: 280px;
+    transform: translate(-50%, -50%);
+    z-index: 3;
     pointer-events: none;
   }
-  @keyframes noteFloat {
-    0%, 100% { transform: translateY(0) scale(1); opacity: 0.6; }
-    25% { transform: translateY(-12px) scale(1.2); opacity: 1; }
-    50% { transform: translateY(0) scale(0.9); opacity: 0.4; }
-    75% { transform: translateY(8px) scale(1.1); opacity: 0.8; }
+  .ring-rotator {
+    width: 100%; height: 100%;
+    position: relative;
+    animation: orbitCW 16s linear infinite;
   }
-  .note.cyan { color: #00D4FF; }
-  .note.green { color: #06D6A0; }
-  .note.white { color: #8899aa; }
+  @keyframes orbitCW {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /* Each note on the ring */
+  .note-orbiting {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    text-shadow: 0 0 8px var(--note-glow);
+    animation: noteBob var(--bob-dur) ease-in-out infinite;
+    animation-delay: var(--bob-delay);
+  }
+  @keyframes noteBob {
+    0%, 100% { margin-top: 0; transform: scale(1); opacity: 0.6; }
+    30% { margin-top: -14px; transform: scale(1.3); opacity: 1; }
+    60% { margin-top: 6px; transform: scale(0.85); opacity: 0.35; }
+    85% { margin-top: -6px; transform: scale(1.1); opacity: 0.8; }
+  }
+  .note-orbiting.cyan { color: #00D4FF; --note-glow: #00D4FF44; }
+  .note-orbiting.green { color: #06D6A0; --note-glow: #06D6A044; }
+  .note-orbiting.white { color: #8899aa; --note-glow: #8899aa44; }
 
   /* ---- LAYER 2: Mini planets ---- */
   .mini-planet {
@@ -352,15 +366,19 @@
   <!-- Star ring -->
   <div class="star-ring"></div>
 
-  <!-- Notes on ring -->
-  <div class="note cyan" style="top:30%;left:20%;--dur:2.8s;--delay:0s;">♪</div>
-  <div class="note green" style="top:28%;left:42%;--dur:3.2s;--delay:0.4s;">♫</div>
-  <div class="note white" style="top:32%;left:65%;--dur:2.5s;--delay:0.8s;">♩</div>
-  <div class="note cyan" style="top:27%;left:78%;--dur:3.5s;--delay:1.2s;">♬</div>
-  <div class="note green" style="top:35%;left:32%;--dur:3.0s;--delay:1.6s;">♪</div>
-  <div class="note white" style="top:25%;left:55%;--dur:2.7s;--delay:0.2s;">♫</div>
-  <div class="note cyan" style="top:33%;left:88%;--dur:3.8s;--delay:2.0s;">♩</div>
-  <div class="note green" style="top:22%;left:10%;--dur:2.9s;--delay:1.0s;">♬</div>
+  <!-- Ring system: orbiting notes -->
+  <div class="ring-system">
+    <div class="ring-rotator">
+      <span class="note-orbiting cyan" style="left:261px;top:131px;--bob-dur:2.8s;--bob-delay:0s;">♪</span>
+      <span class="note-orbiting green" style="left:223px;top:223px;--bob-dur:3.2s;--bob-delay:0.3s;">♫</span>
+      <span class="note-orbiting white" style="left:131px;top:261px;--bob-dur:2.5s;--bob-delay:0.6s;">♩</span>
+      <span class="note-orbiting cyan" style="left:39px;top:223px;--bob-dur:3.5s;--bob-delay:0.9s;">♬</span>
+      <span class="note-orbiting green" style="left:1px;top:131px;--bob-dur:3.0s;--bob-delay:1.2s;">♪</span>
+      <span class="note-orbiting white" style="left:39px;top:39px;--bob-dur:2.7s;--bob-delay:0.2s;">♫</span>
+      <span class="note-orbiting cyan" style="left:131px;top:1px;--bob-dur:3.8s;--bob-delay:0.5s;">♩</span>
+      <span class="note-orbiting green" style="left:223px;top:39px;--bob-dur:2.9s;--bob-delay:1.5s;">♬</span>
+    </div>
+  </div>
 
   <!-- Main planet (layer 1) -->
   <div class="main-planet">

@@ -1,11 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
-    <color name="black">#FF000000</color>
+    <!-- 科技深色主题 -->
+    <color name="bg_primary">#FF0A0E17</color>
+    <color name="bg_secondary">#FF111827</color>
+    <color name="bg_card">#FF1A2332</color>
+    <color name="bg_input">#FF1E293B</color>
+    <color name="accent_cyan">#FF00D4FF</color>
+    <color name="accent_green">#FF06D6A0</color>
+    <color name="accent_purple">#FF7C3AED</color>
+    <color name="text_primary">#FFE2E8F0</color>
+    <color name="text_secondary">#FF94A3B8</color>
+    <color name="text_muted">#FF475569</color>
+    <color name="bubble_user">#FF1E3A5F</color>
+    <color name="bubble_ai">#FF1A2332</color>
+    <color name="bubble_tool">#FF1A2E1A</color>
+    <color name="border">#FF1E293B</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="background">#FF1A1A2E</color>
+    <color name="black">#FF000000</color>
+    <color name="background">#FF0A0E17</color>
 </resources>
